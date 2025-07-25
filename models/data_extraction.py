@@ -3,7 +3,7 @@ import os
 from datetime import datetime, timedelta
 
 
-def extract_data(tickers: list, file_name="tickers_data.csv"):
+def extract_data(tickers: list, file_name: str = "tickers_data.csv"):
     project_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     data_path = os.path.join(project_path, "", file_name)
 
