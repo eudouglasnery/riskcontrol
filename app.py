@@ -23,7 +23,7 @@ st.title("📊 Market Risk Analysis")
 st.sidebar.header("Asset Selection")
 tickers = st.sidebar.multiselect(
     "",
-    options=["PETR4.SA", "TAEE11.SA", "WEGE3.SA", "MGLU3.SA", "ITUB4.SA"],
+    options=["PETR4.SA", "TAEE11.SA", "WEGE3.SA", "MGLU3.SA", "ITUB4.SA", "TAEE4.SA", "MXRF11.SA", "XPML11.SA"],
     default=["PETR4.SA", "TAEE11.SA"]
 )
 
