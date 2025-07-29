@@ -1,5 +1,5 @@
 import streamlit as st
-import pandas as pd
+
 from models.data_extraction import DataExtraction
 from models.indicators import (
     calculate_annualized_volatility,
@@ -19,11 +19,25 @@ st.set_page_config(page_title="Market Risk Dashboard", layout="wide")
 # --- Title ---
 st.title("📊 Market Risk Analysis")
 
+# --- New ticker field ---
+if 'tickers' not in st.session_state:
+    st.session_state['tickers'] = [
+        "PETR4.SA", "TAEE11.SA", "WEGE3.SA",
+        "MGLU3.SA", "ITUB4.SA", "TAEE4.SA",
+        "MXRF11.SA", "XPML11.SA"
+    ]
+
+novo = st.sidebar.text_input("Novo ticker")
+if st.sidebar.button("Add"):
+    t = novo.strip().upper()
+    if t and t not in st.session_state['tickers']:
+        st.session_state['tickers'].append(t)
+
 # --- Sidebar ---
 st.sidebar.header("Asset Selection")
 tickers = st.sidebar.multiselect(
     "",
-    options=["PETR4.SA", "TAEE11.SA", "WEGE3.SA", "MGLU3.SA", "ITUB4.SA", "TAEE4.SA", "MXRF11.SA", "XPML11.SA"],
+    options=st.session_state['tickers'],
     default=["PETR4.SA", "TAEE11.SA"]
 )
 
