@@ -1,6 +1,6 @@
 import streamlit as st
-
-from models.data_extraction import extract_data
+import pandas as pd
+from models.data_extraction import DataExtraction
 from models.indicators import (
     calculate_annualized_volatility,
     calculate_parametric_var,
@@ -29,8 +29,9 @@ tickers = st.sidebar.multiselect(
 
 # --- Data load ---
 if tickers:
-    data = extract_data(tickers)
-    
+    extraction = DataExtraction(tickers=tickers)
+    data = extraction.extract_data()
+
     returns = data.pct_change().dropna()
 
     # --- Visualizations ---
