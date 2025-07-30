@@ -1,12 +1,13 @@
 import yfinance as yf
 import os
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
 
 
 class DataExtraction:
     """Manage downloading and caching of ticker price data."""
-    def __init__(self, tickers: list, file_name: str = "tickers_data.csv", period: int = 180):  # 180 days for 6 months
+    def __init__(self, tickers: list, file_name: str = "tickers_data.csv", months: int = 6):
         """
         Initialize with:
         - tickers: list of ticker symbols to load
@@ -15,7 +16,7 @@ class DataExtraction:
         """
         self.tickers_list = tickers
         self.file_name = file_name
-        self.period = period
+        self.period = months
 
     def extract_data(self):
         """
@@ -62,13 +63,13 @@ class DataExtraction:
         return data_path
 
     @staticmethod
-    def define_start_end_date(period: int):
+    def define_start_end_date(period: int = 6):
         """
         Given a period in days, return (start, end) datetime pair,
         where 'end' is today and 'start' is 'period' days before.
         """
         end = datetime.today()
-        start = end - timedelta(days=period)
+        start = end - relativedelta(months=period)
         return start, end
 
     @staticmethod
