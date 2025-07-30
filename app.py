@@ -58,9 +58,10 @@ if tickers:
     # --- Risk indicators ---
     volatility = calculate_annualized_volatility(returns)
     var_95 = calculate_parametric_var(returns)
+    var_99 = calculate_parametric_var(returns, confidence_level=0.99)
     correlation = calculate_correlation(returns)
 
-    display_risk_indicators(volatility, var_95)
+    display_risk_indicators(volatility, var_95, var_99)
 
     st.subheader("🔗 Correlation Matrix")
     plot_correlation_heatmap(correlation)

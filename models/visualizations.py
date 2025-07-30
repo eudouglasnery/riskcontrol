@@ -31,13 +31,14 @@ def plot_correlation_heatmap(correlation: pd.DataFrame):
     st.plotly_chart(fig, use_container_width=True)
 
 
-def display_risk_indicators(volatility: pd.Series, var: pd.Series):
+def display_risk_indicators(volatility: pd.Series, var_95: pd.Series, var_99: pd.Series):
     """
     Displays the risk indicators (volatility and VaR) in a table.
     """
     risk_df = pd.DataFrame({
         'Annualized Volatility': volatility,
-        'Parametric VaR (95%)': var
+        'Parametric VaR (95%)': var_95,
+        'Parametric VaR (99%)': var_99
     })
     st.subheader("Risk Indicators")
     st.dataframe(risk_df.style.format("{:.2%}"))
