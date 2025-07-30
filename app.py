@@ -6,12 +6,7 @@ from models.indicators import (
     calculate_parametric_var,
     calculate_correlation
 )
-from models.visualizations import (
-    plot_price_series,
-    plot_daily_returns,
-    plot_correlation_heatmap,
-    display_risk_indicators
-)
+from models.visualizations import DataVisualizations
 
 # --- Page config ---
 st.set_page_config(page_title="Market Risk Dashboard", layout="wide")
@@ -45,15 +40,17 @@ tickers = st.sidebar.multiselect(
 if tickers:
     extraction = DataExtraction(tickers=tickers)
     data = extraction.extract_data()
-
     returns = data.pct_change().dropna()
 
     # --- Visualizations ---
+    visualizations = DataVisualizations(data, returns)
     st.subheader("📈 Historical Prices")
-    plot_price_series(data)
+    visualizations.plot_price_series()
 
-    st.subheader("📉 Daily Returns")
-    plot_daily_returns(returns)
+    st.subheader("📈 Return & Volatility Analysis")
+    visualizations.plot_daily_returns()
+    visualizations.plot_rolling_volatility()
+    visualizations.plot_rolling_volatility(window=63)
 
     # --- Risk indicators ---
     volatility = calculate_annualized_volatility(returns)
@@ -61,9 +58,9 @@ if tickers:
     var_99 = calculate_parametric_var(returns, confidence_level=0.99)
     correlation = calculate_correlation(returns)
 
-    display_risk_indicators(volatility, var_95, var_99)
+    visualizations.display_risk_indicators(volatility, var_95, var_99)
 
     st.subheader("🔗 Correlation Matrix")
-    plot_correlation_heatmap(correlation)
+    visualizations.plot_correlation_heatmap(correlation)
 else:
     st.info("Please select at least one ticker to begin.")
