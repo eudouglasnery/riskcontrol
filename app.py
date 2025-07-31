@@ -22,7 +22,7 @@ if 'tickers' not in st.session_state:
         "MXRF11.SA", "XPML11.SA"
     ]
 
-novo = st.sidebar.text_input("Novo ticker")
+novo = st.sidebar.text_input("New ticker \n\nExemple: BBSE3.SA")
 if st.sidebar.button("Add"):
     t = novo.strip().upper()
     if t and t not in st.session_state['tickers']:
