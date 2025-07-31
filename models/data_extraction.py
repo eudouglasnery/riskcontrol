@@ -1,5 +1,6 @@
 import yfinance as yf
 import os
+import time
 import pandas as pd
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
@@ -73,12 +74,30 @@ class DataExtraction:
         return start, end
 
     @staticmethod
-    def download_all(tickers_list: list, start, end, data_path):
+    def download_all(tickers_list: list,
+                     start: datetime,
+                     end: datetime,
+                     data_path: str,
+                     retries: int = 3,
+                     wait: int = 5):
         """
         Download price data for all requested tickers.
         Save results to CSV and return the DataFrame.
         """
-        tickers_data = yf.download(tickers_list, start=start, end=end)["Close"]
-        tickers_data.dropna(inplace=True)
-        tickers_data.to_csv(data_path)
-        return tickers_data
+        for attempt in range(retries):
+            try:
+                df = yf.download(
+                    tickers_list,
+                    start=start,
+                    end=end,
+                    threads=False,
+                    progress=False,
+                    timeout=30
+                )["Close"]
+                df.dropna(how="all", inplace=True)
+                df.to_csv(data_path)
+                return df
+            except Exception as e:
+                if attempt == retries - 1:
+                    raise RuntimeError(f"Failed to download data after {retries} attempts: {e}") from e
+                time.sleep(wait)
