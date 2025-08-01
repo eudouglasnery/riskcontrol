@@ -60,7 +60,7 @@ vol = returns.std() * np.sqrt(252)
 Baseado na suposição de retornos normalmente distribuídos. Calcula a perda máxima esperada com 95% e 99% de confiança:
 
 ```python
-z_score = norm.ppf(1 - confiance)  # confidence = 0.95 ou 0.99
+z_score = norm.ppf(1 - confiance)  
 var = returns.mean() + returns.std() * z_score
 ```
 
