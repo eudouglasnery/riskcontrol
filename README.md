@@ -1,83 +1,83 @@
 # 📊 Market Risk Analysis – Accenture RiskControl
 
-## 🌟 Objetivo do Projeto
+## 🌟 Project Objective
 
-Construir um pipeline simples de análise de risco de mercado para ativos brasileiros, oferecendo um dashboard interativo que calcula e exibe indicadores de risco.
+Build a simple market-risk analysis pipeline for Brazilian assets, offering an interactive dashboard that calculates and displays key risk indicators.
 
-## 🛠️ Ferramentas Utilizadas
+## 🛠️ Tools Used
 
 * **Python** 3.12
-* **Bibliotecas**:
+* **Libraries**
 
-  * [`yfinance`](https://pypi.org/project/yfinance/) – Coleta de dados financeiros
-  * `pandas`, `numpy`, `scipy`, `python‑dateutil` – Tratamento de dados e estatística
-  * `plotly`, `streamlit` – Visualização interativa
-* **Outras**: Git (controle de versão)
+  * [`yfinance`](https://pypi.org/project/yfinance/) – Financial data collection
+  * `pandas`, `numpy`, `scipy`, `python-dateutil` – Data handling and statistics
+  * `plotly`, `streamlit` – Interactive visualization
+* **Other**: Git (version control)
 
-## ▶️ Como Executar
+## ▶️ How to Run
 
-1. Clone o repositório:
+1. Clone the repository:
 
    ```bash
-   git clone https://github.com/seu-usuario/riskcontrol.git
+   git clone https://github.com/your-user/riskcontrol.git
    cd riskcontrol
    ```
 
-2. Instale as dependências:
+2. Install the dependencies:
 
    ```bash
    pip install -r requirements.txt
    ```
 
-3. Execute o dashboard:
+3. Launch the dashboard:
 
    ```bash
    streamlit run app.py
    ```
 
-## ⚙️ Funcionalidades Principais
+## ⚙️ Key Features
 
-| Funcionalidade               | Descrição                                                                                                                                        |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Download & cache**         | Preços diários dos últimos 6 meses são baixados via `yfinance` e cacheados em `tickers_data.csv`. Downloads posteriores só buscam novos tickers. |
-| **Adição manual de tickers** | Campo na sidebar permite incluir qualquer código B3 (ex.: `BBSE3.SA`) em tempo real.                                                             |
-| **Indicadores de risco**     | • Volatilidade anualizada  • VaR paramétrico 95 % **e** 99 %  • Matriz de correlação                                                             |
-| **Rolling volatility**       | Gráficos para janelas de 21 dias (≈1 mês) e 63 dias (≈3 meses).                                                                                  |
-| **Dashboard interativo**     | Todos os gráficos e tabelas são dinâmicos (Plotly + Streamlit).  
+| Functionality              | Description                                                                                                                                |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Download & cache**       | Daily prices for the last 6 months are pulled via `yfinance` and cached in `tickers_data.csv`. Subsequent runs fetch only missing tickers. |
+| **Manual ticker addition** | A sidebar field lets you add any B3 symbol (e.g., `BBSE3.SA`) on the fly.                                                                  |
+| **Risk indicators**        | • Annualized volatility  • Parametric VaR 95 % **and** 99 %  • Correlation matrix                                                          |
+| **Rolling volatility**     | Charts for 21-day (≈ 1 month) and 63-day (≈ 3 months) windows.                                                                             |
+| **Interactive dashboard**  | All charts and tables are dynamic (Plotly + Streamlit).                                                                                    |
 
-## 📈 Explicação dos Cálculos
+## 📈 Calculation Explained
 
-### 1. Volatilidade Anualizada
+### 1. Annualized Volatility
 
-Calculada com base no desvio padrão dos retornos diários e ajustada para 252 dias úteis:
+Computed from the standard deviation of daily returns, scaled to 252 business days:
 
 ```python
 vol = returns.std() * np.sqrt(252)
 ```
 
-### 2. VaR Paramétrico (95 % e 99 %)
+### 2. Parametric VaR (95 % and 99 %)
 
-Baseado na suposição de retornos normalmente distribuídos. Calcula a perda máxima esperada com 95% e 99% de confiança:
+Assuming normally distributed returns, it estimates the maximum expected loss at the 95 % and 99 % confidence levels:
 
 ```python
-z_score = norm.ppf(1 - confiance)  
+z_score = norm.ppf(1 - confiance)
 var = returns.mean() + returns.std() * z_score
 ```
 
-### 3. Correlação
+### 3. Correlation
 
-Calculada com a matriz de correlação de Pearson entre os ativos:
+Calculated via the Pearson correlation matrix of the assets:
 
 ```python
 correlation_matrix = returns.corr()
 ```
 
-## 📊 Visualizações
+## 📊 Visualizations
 
-O dashboard exibe:
+The dashboard displays:
 
-* **Série histórica de preços**
-* **Retornos diários** 
-* **Rolling volatility 21 d & 63 d** 
-* **Tabela de indicadores**: Vol, VaR 95 %, VaR 99 %
-* **Matriz de correlação** 
+* **Historical price series**
+* **Daily returns**
+* **Rolling volatility 21 d & 63 d**
+* **Risk‐indicator table**: Vol, VaR 95 %, VaR 99 %
+* **Correlation matrix**
