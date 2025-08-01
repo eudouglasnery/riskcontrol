@@ -1,11 +1,7 @@
 import streamlit as st
 
 from models.data_extraction import DataExtraction
-from models.indicators import (
-    calculate_annualized_volatility,
-    calculate_parametric_var,
-    calculate_correlation
-)
+from models.indicators import RiskIndicators
 from models.visualizations import DataVisualizations
 
 # --- Page config ---
@@ -36,8 +32,8 @@ tickers = st.sidebar.multiselect(
     default=["PETR4.SA", "TAEE11.SA"]
 )
 
-# --- Data load ---
 if tickers:
+    # --- Data load ---
     extraction = DataExtraction(tickers=tickers)
     data = extraction.extract_data()
     returns = data.pct_change().dropna()
@@ -53,10 +49,11 @@ if tickers:
     visualizations.plot_rolling_volatility(window=63)
 
     # --- Risk indicators ---
-    volatility = calculate_annualized_volatility(returns)
-    var_95 = calculate_parametric_var(returns)
-    var_99 = calculate_parametric_var(returns, confidence_level=0.99)
-    correlation = calculate_correlation(returns)
+    risk_indicators = RiskIndicators()
+    volatility = risk_indicators.calculate_annualized_volatility(returns)
+    var_95 = risk_indicators.calculate_parametric_var(returns)
+    var_99 = risk_indicators.calculate_parametric_var(returns, confidence_level=0.99)
+    correlation = risk_indicators.calculate_correlation(returns)
 
     visualizations.display_risk_indicators(volatility, var_95, var_99)
 
