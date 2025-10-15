@@ -1,4 +1,4 @@
-# 📊 Market Risk Analysis – Accenture RiskControl
+# 📊 Market Risk Analysis 
 
 ## 🌟 Project Objective
 
