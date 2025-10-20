@@ -53,9 +53,19 @@ if tickers:
     volatility = risk_indicators.calculate_annualized_volatility(returns)
     var_95 = risk_indicators.calculate_parametric_var(returns)
     var_99 = risk_indicators.calculate_parametric_var(returns, confidence_level=0.99)
+    historical_var_95 = risk_indicators.calculate_historical_var(returns)
+    cvar_95 = risk_indicators.calculate_cvar(returns)
+    sharpe_ratio = risk_indicators.calculate_sharpe_ratio(returns, 0.1452)
     correlation = risk_indicators.calculate_correlation(returns)
 
-    visualizations.display_risk_indicators(volatility, var_95, var_99)
+    visualizations.display_risk_indicators(
+        volatility,
+        var_95,
+        var_99,
+        historical_var_95,
+        cvar_95,
+        sharpe_ratio
+    )
 
     st.subheader("🔗 Correlation Matrix")
     visualizations.plot_correlation_heatmap(correlation)

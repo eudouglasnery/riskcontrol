@@ -46,14 +46,30 @@ class DataVisualizations:
         st.plotly_chart(fig, use_container_width=True)
 
     @staticmethod
-    def display_risk_indicators(volatility: pd.Series, var_95: pd.Series, var_99: pd.Series):
+    def display_risk_indicators(volatility: pd.Series,
+                                parametric_var_95: pd.Series,
+                                parametric_var_99: pd.Series,
+                                historical_var_95: pd.Series,
+                                cvar_95: pd.Series,
+                                sharpe_ratio: pd.Series):
         """
         Displays the risk indicators (volatility and VaR) in a table.
         """
         risk_df = pd.DataFrame({
             'Annualized Volatility': volatility,
-            'Parametric VaR (95%)': var_95,
-            'Parametric VaR (99%)': var_99
+            'Parametric VaR (95%)': parametric_var_95,
+            'Parametric VaR (99%)': parametric_var_99,
+            'Historical VaR (95%)': historical_var_95,
+            'CVaR / ES (95%)': cvar_95,
+            'Sharpe Ratio': sharpe_ratio
         })
         st.subheader("Risk Indicators")
-        st.dataframe(risk_df.style.format("{:.2%}"))
+        formatters = {
+            'Annualized Volatility': "{:.2%}",
+            'Parametric VaR (95%)': "{:.2%}",
+            'Parametric VaR (99%)': "{:.2%}",
+            'Historical VaR (95%)': "{:.2%}",
+            'CVaR / ES (95%)': "{:.2%}",
+            'Sharpe Ratio': "{:.2f}"
+        }
+        st.dataframe(risk_df.style.format(formatters))
