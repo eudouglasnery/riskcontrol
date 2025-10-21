@@ -10,39 +10,84 @@ class DataVisualizations:
         self.returns = returns
 
     def plot_price_series(self):
-        prices = self.data
         fig = go.Figure()
-        for column in prices.columns:
-            fig.add_trace(go.Scatter(x=prices.index, y=prices[column], mode='lines', name=column))
+        for column in self.data.columns:
+            fig.add_trace(go.Scatter(x=self.data.index, y=self.data[column], mode='lines', name=column))
 
-        fig.update_layout(xaxis_title='Date',
-                          yaxis_title='Adjusted Price',
-                          template='plotly_white')
+        fig.update_layout(
+            xaxis_title='Date',
+            yaxis_title='Adjusted Price',
+            template='plotly_white'
+        )
         st.plotly_chart(fig, use_container_width=True)
 
     def plot_daily_returns(self):
-        fig = px.line(self.returns, title='Daily Returns')
-        fig.update_layout(xaxis_title='Date', yaxis_title='Return', template='plotly_white')
+        fig = px.line(
+            self.returns,
+            title='Daily Returns',
+            template='plotly_white'
+        )
+        fig.update_layout(xaxis_title='Date', yaxis_title='Return')
         fig.update_yaxes(tickformat=".2%")
+        st.plotly_chart(fig, use_container_width=True)
+
+    def plot_return_distribution(self, bins: int = 50):
+        """
+        Plot histogram of daily returns to inspect distribution shape.
+        """
+        returns_long = self.returns.melt(var_name='Asset', value_name='Return').dropna()
+        fig = px.histogram(
+            returns_long,
+            x='Return',
+            color='Asset',
+            nbins=bins,
+            barmode='overlay',
+            opacity=0.6,
+            title='Distribution of Daily Returns',
+            template='plotly_white'
+        )
+        fig.update_xaxes(tickformat=".2%")
         st.plotly_chart(fig, use_container_width=True)
 
     def plot_rolling_volatility(self, window: int = 21):
         """
-        Plots annualized volatility in a moving window.
-        - window: number of days in the window (21 ≈ 1 trading month).
+        Plot annualized volatility in a moving window.
+        - window: number of days in the window (21 ~ 1 trading month).
         """
         rolling_vol = self.returns.rolling(window).std() * (252 ** 0.5)
-        fig = px.line(rolling_vol,
-                      title=f'Rolling {window}-Day Annualized Volatility')
+        fig = px.line(
+            rolling_vol,
+            title=f'Rolling {window}-Day Annualized Volatility',
+            template='plotly_white'
+        )
+        fig.update_yaxes(tickformat=".2%")
+        st.plotly_chart(fig, use_container_width=True)
+
+    def plot_drawdown(self):
+        """
+        Plot drawdown (peak-to-trough decline) for each asset.
+        """
+        drawdown = self.data / self.data.cummax() - 1
+        fig = px.line(
+            drawdown,
+            title='Historical Drawdown',
+            template='plotly_white'
+        )
+        fig.update_layout(yaxis_title='Drawdown')
         fig.update_yaxes(tickformat=".2%")
         st.plotly_chart(fig, use_container_width=True)
 
     @staticmethod
     def plot_correlation_heatmap(correlation: pd.DataFrame):
-        fig = px.imshow(correlation,
-                        text_auto=True,
-                        color_continuous_scale='RdBu',
-                        zmin=-1, zmax=1)
+        fig = px.imshow(
+            correlation,
+            text_auto=True,
+            color_continuous_scale='RdBu',
+            zmin=-1,
+            zmax=1,
+            title='Correlation Matrix',
+            template='plotly_white'
+        )
         st.plotly_chart(fig, use_container_width=True)
 
     @staticmethod
@@ -53,7 +98,7 @@ class DataVisualizations:
                                 cvar_95: pd.Series,
                                 sharpe_ratio: pd.Series):
         """
-        Displays the risk indicators (volatility and VaR) in a table.
+        Display the risk indicators (volatility and VaR) in a table.
         """
         risk_df = pd.DataFrame({
             'Annualized Volatility': volatility,
@@ -86,19 +131,20 @@ class DataVisualizations:
         cols[2].metric("Sharpe Ratio", f"{sharpe:.2f}")
 
         st.write("Weights")
-        wt_df = pd.DataFrame({"Weight": weights}).T if isinstance(weights, pd.Series) else pd.DataFrame({"Weight": weights})
-        if isinstance(weights, pd.Series):
-            wt_df = weights.to_frame(name="Weight").T
-        else:
-            # fallback display
-            wt_df = pd.DataFrame(weights, columns=["Weight"]).T
-        st.dataframe(wt_df.style.format("{:.2%}"))
+        weights_df = weights.rename("Weight").to_frame()
+        st.dataframe(weights_df.style.format({"Weight": "{:.2%}"}))
 
     @staticmethod
     def plot_efficient_frontier(frontier: pd.DataFrame,
                                 max_sharpe_point: dict | None = None,
                                 min_vol_point: dict | None = None):
-        fig = px.line(frontier, x='Volatility', y='Return', title='Efficient Frontier', template='plotly_white')
+        fig = px.line(
+            frontier,
+            x='Volatility',
+            y='Return',
+            title='Efficient Frontier',
+            template='plotly_white'
+        )
         fig.update_traces(mode='lines+markers')
 
         if max_sharpe_point is not None:
