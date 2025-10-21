@@ -46,14 +46,75 @@ class DataVisualizations:
         st.plotly_chart(fig, use_container_width=True)
 
     @staticmethod
-    def display_risk_indicators(volatility: pd.Series, var_95: pd.Series, var_99: pd.Series):
+    def display_risk_indicators(volatility: pd.Series,
+                                parametric_var_95: pd.Series,
+                                parametric_var_99: pd.Series,
+                                historical_var_95: pd.Series,
+                                cvar_95: pd.Series,
+                                sharpe_ratio: pd.Series):
         """
         Displays the risk indicators (volatility and VaR) in a table.
         """
         risk_df = pd.DataFrame({
             'Annualized Volatility': volatility,
-            'Parametric VaR (95%)': var_95,
-            'Parametric VaR (99%)': var_99
+            'Parametric VaR (95%)': parametric_var_95,
+            'Parametric VaR (99%)': parametric_var_99,
+            'Historical VaR (95%)': historical_var_95,
+            'CVaR / ES (95%)': cvar_95,
+            'Sharpe Ratio': sharpe_ratio
         })
         st.subheader("Risk Indicators")
-        st.dataframe(risk_df.style.format("{:.2%}"))
+        formatters = {
+            'Annualized Volatility': "{:.2%}",
+            'Parametric VaR (95%)': "{:.2%}",
+            'Parametric VaR (99%)': "{:.2%}",
+            'Historical VaR (95%)': "{:.2%}",
+            'CVaR / ES (95%)': "{:.2%}",
+            'Sharpe Ratio': "{:.2f}"
+        }
+        st.dataframe(risk_df.style.format(formatters))
+
+    @staticmethod
+    def display_portfolio_summary(weights: pd.Series,
+                                  expected_return: float,
+                                  volatility: float,
+                                  sharpe: float):
+        st.subheader("Portfolio Summary")
+        cols = st.columns(3)
+        cols[0].metric("Expected Return (annual)", f"{expected_return:.2%}")
+        cols[1].metric("Volatility (annual)", f"{volatility:.2%}")
+        cols[2].metric("Sharpe Ratio", f"{sharpe:.2f}")
+
+        st.write("Weights")
+        wt_df = pd.DataFrame({"Weight": weights}).T if isinstance(weights, pd.Series) else pd.DataFrame({"Weight": weights})
+        if isinstance(weights, pd.Series):
+            wt_df = weights.to_frame(name="Weight").T
+        else:
+            # fallback display
+            wt_df = pd.DataFrame(weights, columns=["Weight"]).T
+        st.dataframe(wt_df.style.format("{:.2%}"))
+
+    @staticmethod
+    def plot_efficient_frontier(frontier: pd.DataFrame,
+                                max_sharpe_point: dict | None = None,
+                                min_vol_point: dict | None = None):
+        fig = px.line(frontier, x='Volatility', y='Return', title='Efficient Frontier', template='plotly_white')
+        fig.update_traces(mode='lines+markers')
+
+        if max_sharpe_point is not None:
+            fig.add_trace(go.Scatter(
+                x=[max_sharpe_point['Volatility']],
+                y=[max_sharpe_point['Return']],
+                mode='markers',
+                marker=dict(size=10, color='green'),
+                name='Max Sharpe'
+            ))
+        if min_vol_point is not None:
+            fig.add_trace(go.Scatter(
+                x=[min_vol_point['Volatility']],
+                y=[min_vol_point['Return']],
+                mode='markers',
+                marker=dict(size=10, color='red'),
+                name='Min Vol'
+            ))
+        st.plotly_chart(fig, use_container_width=True)
