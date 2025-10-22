@@ -5,6 +5,11 @@ from models.data_extraction import DataExtraction
 from models.indicators import RiskIndicators
 from models.visualizations import DataVisualizations
 from models.portfolio import PortfolioAnalytics
+from models.simulation import MonteCarloPlanner
+
+
+def format_currency(value: float) -> str:
+    return f"R$ {value:,.2f}"
 
 
 st.set_page_config(page_title="Market Risk Dashboard", layout="wide")
@@ -103,11 +108,12 @@ if tickers:
         points=30
     )
 
-    tab_returns, tab_risk, tab_corr, tab_port = st.tabs([
+    tab_returns, tab_risk, tab_corr, tab_port, tab_plan = st.tabs([
         "Analise de Retornos",
         "Analise de Risco Individual",
         "Correlacao",
-        "Portfolio"
+        "Portfolio",
+        "Planejamento Financeiro"
     ])
 
     with tab_returns:
@@ -203,5 +209,172 @@ if tickers:
             max_sharpe_point={"Return": max_sharpe_return, "Volatility": max_sharpe_volatility},
             min_vol_point={"Return": min_vol_return, "Volatility": min_vol_volatility}
         )
+
+    with tab_plan:
+        st.subheader("Planejamento Financeiro - Monte Carlo")
+        with st.expander("Como usar esta aba?", expanded=False):
+            st.markdown(
+                "- Informe sua situacao atual (patrimonio, renda, despesas) e metas.\n"
+                "- A simulacao roda multiplos cenarios anuais com base no portfolio selecionado.\n"
+                "- Resultados sao apresentados em valores reais, ajustados pela inflacao informada.\n"
+                "- A probabilidade de sucesso compara o patrimonio projetado com a meta baseada na taxa de retirada."
+            )
+
+        with st.form("financial_planner"):
+            col_left, col_right = st.columns(2)
+
+            with col_left:
+                current_age = int(st.number_input("Idade atual", min_value=18, max_value=80, value=35, step=1))
+                default_retirement_age = min(max(current_age + 25, current_age + 1), 100)
+                retirement_age = int(
+                    st.number_input(
+                        "Idade planejada para aposentadoria",
+                        min_value=current_age + 1,
+                        max_value=100,
+                        value=default_retirement_age,
+                        step=1
+                    )
+                )
+                initial_wealth = float(
+                    st.number_input("Patrimonio atual (R$)", min_value=0.0, value=200000.0, step=10000.0, format="%.2f")
+                )
+                desired_income = float(
+                    st.number_input(
+                        "Renda anual desejada na aposentadoria (R$)",
+                        min_value=0.0,
+                        value=120000.0,
+                        step=5000.0,
+                        format="%.2f"
+                    )
+                )
+                contribution_growth_pct = float(
+                    st.number_input(
+                        "Crescimento anual das contribuicoes (%)",
+                        min_value=0.0,
+                        max_value=15.0,
+                        value=0.0,
+                        step=0.5,
+                        format="%.2f"
+                    )
+                )
+
+            with col_right:
+                annual_income = float(
+                    st.number_input("Renda anual atual (R$)", min_value=0.0, value=180000.0, step=5000.0, format="%.2f")
+                )
+                annual_expenses = float(
+                    st.number_input("Despesas anuais atuais (R$)", min_value=0.0, value=120000.0, step=5000.0, format="%.2f")
+                )
+                savings_rate_pct = float(
+                    st.slider("Percentual da sobra destinado a poupanca (%)", min_value=0.0, max_value=100.0, value=70.0, step=1.0)
+                )
+                extra_contribution = float(
+                    st.number_input(
+                        "Contribuicao anual adicional (R$)",
+                        min_value=0.0,
+                        value=0.0,
+                        step=5000.0,
+                        format="%.2f"
+                    )
+                )
+                withdrawal_rate_pct = float(
+                    st.number_input(
+                        "Taxa de retirada segura (%)",
+                        min_value=0.5,
+                        max_value=10.0,
+                        value=4.0,
+                        step=0.1,
+                        format="%.2f"
+                    )
+                )
+                inflation_pct = float(
+                    st.number_input(
+                        "Inflacao anual esperada (%)",
+                        min_value=0.0,
+                        max_value=15.0,
+                        value=3.0,
+                        step=0.1,
+                        format="%.2f"
+                    )
+                )
+                num_simulations = int(
+                    st.number_input("Numero de simulacoes", min_value=1000, max_value=50000, value=10000, step=1000)
+                )
+                rng_seed_input = int(
+                    st.number_input("Semente aleatoria (0 para aleatorio)", min_value=0, max_value=999_999, value=0, step=1)
+                )
+
+            savings_capacity = max(annual_income - annual_expenses, 0.0)
+            annual_contribution = savings_capacity * (savings_rate_pct / 100.0) + extra_contribution
+            st.caption(f"Aporte anual estimado: {format_currency(annual_contribution)}")
+
+            submitted = st.form_submit_button("Rodar simulacao")
+
+        if submitted:
+            errors: list[str] = []
+            if retirement_age <= current_age:
+                errors.append("A idade de aposentadoria deve ser maior que a idade atual.")
+            if withdrawal_rate_pct <= 0.0:
+                errors.append("A taxa de retirada deve ser positiva.")
+            if num_simulations <= 0:
+                errors.append("Numero de simulacoes deve ser positivo.")
+
+            if errors:
+                for message in errors:
+                    st.error(message)
+            else:
+                withdrawal_rate = withdrawal_rate_pct / 100.0
+                inflation_rate = inflation_pct / 100.0
+                contribution_growth = contribution_growth_pct / 100.0
+                seed_value = None if rng_seed_input == 0 else rng_seed_input
+
+                planner = MonteCarloPlanner(
+                    expected_returns=mu.loc[tickers],
+                    covariance=cov.loc[tickers, tickers],
+                    weights=pd.Series(weight_vector, index=tickers),
+                    inflation=inflation_rate
+                )
+
+                try:
+                    result = planner.run_simulation(
+                        current_age=current_age,
+                        retirement_age=retirement_age,
+                        initial_wealth=initial_wealth,
+                        annual_contribution=annual_contribution,
+                        desired_retirement_income=desired_income,
+                        withdrawal_rate=withdrawal_rate,
+                        inflation=inflation_rate,
+                        n_sims=num_simulations,
+                        contribution_growth=contribution_growth,
+                        rng_seed=seed_value,
+                    )
+                except ValueError as exc:
+                    st.error(f"Erro na simulacao: {exc}")
+                else:
+                    final_values = pd.Series(result.wealth_paths[:, -1], name="Final wealth")
+                    mean_final = float(final_values.mean())
+
+                    st.success("Simulacao concluida com sucesso.")
+                    metrics_col1, metrics_col2, metrics_col3 = st.columns(3)
+                    metrics_col1.metric("Probabilidade de atingir a meta", f"{result.probability_success * 100:.1f}%")
+                    metrics_col2.metric("Meta de patrimonio", format_currency(result.target_wealth))
+                    metrics_col3.metric("Patrimonio mediano projetado", format_currency(result.final_distribution["p50"]))
+
+                    st.caption(f"Media do patrimonio final: {format_currency(mean_final)}")
+
+                    visualizations.plot_wealth_fan_chart(
+                        result.percentiles,
+                        title="Projecao do patrimonio (percentis)",
+                        yaxis_label="Patrimonio real (R$)"
+                    )
+
+                    visualizations.plot_final_distribution(
+                        final_values,
+                        target=result.target_wealth,
+                        title="Distribuicao do patrimonio final"
+                    )
+
+                    st.write("Percentis do patrimonio final")
+                    st.table(result.final_distribution.apply(format_currency).to_frame(name="Valor"))
 else:
     st.info("Selecione pelo menos um ticker para iniciar a analise.")

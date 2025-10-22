@@ -164,3 +164,79 @@ class DataVisualizations:
                 name='Min Vol'
             ))
         st.plotly_chart(fig, use_container_width=True)
+
+    @staticmethod
+    def plot_wealth_fan_chart(percentiles: pd.DataFrame,
+                              title: str = "Projected Wealth Distribution",
+                              yaxis_label: str = "Real wealth"):
+        if not {"p10", "p25", "p50", "p75", "p90"}.issubset(percentiles.columns):
+            raise ValueError("Percentiles DataFrame must include p10, p25, p50, p75, and p90 columns.")
+
+        x_values = percentiles.index
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(
+            x=x_values,
+            y=percentiles["p90"],
+            line=dict(width=0),
+            showlegend=False,
+            hoverinfo="skip"
+        ))
+        fig.add_trace(go.Scatter(
+            x=x_values,
+            y=percentiles["p10"],
+            fill='tonexty',
+            fillcolor='rgba(33, 150, 243, 0.15)',
+            line=dict(width=0),
+            name='10% - 90%'
+        ))
+        fig.add_trace(go.Scatter(
+            x=x_values,
+            y=percentiles["p75"],
+            line=dict(width=0),
+            showlegend=False,
+            hoverinfo="skip"
+        ))
+        fig.add_trace(go.Scatter(
+            x=x_values,
+            y=percentiles["p25"],
+            fill='tonexty',
+            fillcolor='rgba(33, 150, 243, 0.3)',
+            line=dict(width=0),
+            name='25% - 75%'
+        ))
+        fig.add_trace(go.Scatter(
+            x=x_values,
+            y=percentiles["p50"],
+            line=dict(color='rgba(33, 150, 243, 1.0)', width=2),
+            name='Mediana'
+        ))
+
+        fig.update_layout(
+            title=title,
+            template='plotly_white',
+            xaxis_title='Age',
+            yaxis_title=yaxis_label
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+    @staticmethod
+    def plot_final_distribution(final_values: pd.Series,
+                                target: float | None = None,
+                                title: str = "Final Wealth Distribution"):
+        df = final_values.to_frame(name='Wealth')
+        fig = px.histogram(
+            df,
+            x='Wealth',
+            nbins=50,
+            title=title,
+            template='plotly_white'
+        )
+        if target is not None and target > 0:
+            fig.add_vline(
+                x=target,
+                line_dash='dash',
+                line_color='red',
+                annotation_text='Target wealth',
+                annotation_position='top right'
+            )
+        st.plotly_chart(fig, use_container_width=True)
