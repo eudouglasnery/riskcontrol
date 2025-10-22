@@ -24,23 +24,23 @@ if 'tickers' not in st.session_state:
     ]
 
 # --- Sidebar: manage ticker universe ---
-new_ticker = st.sidebar.text_input("Adicionar novo ticker (ex: BBSE3.SA)")
-if st.sidebar.button("Adicionar"):
+new_ticker = st.sidebar.text_input("Add new ticker (e.g., BBSE3.SA)")
+if st.sidebar.button("Add"):
     symbol = new_ticker.strip().upper()
     if symbol and symbol not in st.session_state['tickers']:
         st.session_state['tickers'].append(symbol)
 
-st.sidebar.header("Selecao de Ativos")
+st.sidebar.header("Asset Selection")
 tickers = st.sidebar.multiselect(
-    "Escolha os ativos para analise",
+    "Choose assets for analysis",
     options=st.session_state['tickers'],
     default=["PETR4.SA", "TAEE11.SA"]
 )
 
 if tickers:
-    st.sidebar.header("Parametros do Portfolio")
+    st.sidebar.header("Portfolio Parameters")
     rf_percent = st.sidebar.number_input(
-        "Taxa livre de risco anual (%)",
+        "Annual risk-free rate (%)",
         value=0.0,
         step=0.25,
         format="%.3f"
@@ -49,10 +49,10 @@ if tickers:
 
     default_weight = 1.0 / len(tickers)
     manual_weights = {}
-    with st.sidebar.expander("Pesos do portfolio (normalizados automaticamente)", expanded=False):
+    with st.sidebar.expander("Portfolio weights (normalized automatically)", expanded=False):
         for ticker in tickers:
             manual_weights[ticker] = st.number_input(
-                f"Peso {ticker}",
+                f"Weight {ticker}",
                 min_value=0.0,
                 max_value=1.0,
                 value=float(default_weight),
@@ -109,21 +109,21 @@ if tickers:
     )
 
     tab_returns, tab_risk, tab_corr, tab_port, tab_plan = st.tabs([
-        "Analise de Retornos",
-        "Analise de Risco Individual",
-        "Correlacao",
+        "Return Analysis",
+        "Individual Risk Analysis",
+        "Correlation",
         "Portfolio",
-        "Planejamento Financeiro"
+        "Financial Planning"
     ])
 
     with tab_returns:
-        st.subheader("Analise de Retornos")
-        with st.expander("O que observar?", expanded=False):
+        st.subheader("Return Analysis")
+        with st.expander("What to watch?", expanded=False):
             st.markdown(
-                "- **Precos historicos** mostram a trajetoria do ativo ao longo do tempo.\n"
-                "- **Retornos diarios** evidenciam oscilacoes de curto prazo.\n"
-                "- **Distribuicao de retornos** ajuda a checar a hipotese de normalidade usada no VaR parametrico.\n"
-                "- **Drawdown** quantifica quedas em relacao ao ultimo pico, util para avaliar risco de perda prolongada."
+                "- **Historical prices** reveal the asset's trajectory over time.\n"
+                "- **Daily returns** highlight short-term fluctuations.\n"
+                "- **Return distribution** helps check the normality assumption used in the parametric VaR.\n"
+                "- **Drawdown** measures declines relative to the most recent peak, useful for assessing prolonged loss risk."
             )
         visualizations.plot_price_series()
         col_a, col_b = st.columns(2)
@@ -134,14 +134,14 @@ if tickers:
         visualizations.plot_drawdown()
 
     with tab_risk:
-        st.subheader("Analise de Risco Individual")
-        with st.expander("Como interpretar os indicadores?", expanded=False):
+        st.subheader("Individual Risk Analysis")
+        with st.expander("How to interpret the indicators?", expanded=False):
             st.markdown(
-                "- **Volatilidade anualizada**: desvio padrao dos retornos diarios convertido para base anual.\n"
-                "- **VaR parametrico**: pior perda esperada assumindo distribuicao normal.\n"
-                "- **VaR historico**: pior perda baseada nos dados observados.\n"
-                "- **CVaR / ES**: perda media quando o VaR e ultrapassado.\n"
-                "- **Sharpe**: retorno excedente sobre a taxa livre de risco dividido pela volatilidade."
+                "- **Annualized volatility**: standard deviation of daily returns scaled to an annual basis.\n"
+                "- **Parametric VaR**: worst expected loss assuming a normal distribution.\n"
+                "- **Historical VaR**: worst loss observed in the historical data.\n"
+                "- **CVaR / ES**: average loss when the VaR threshold is breached.\n"
+                "- **Sharpe**: excess return over the risk-free rate divided by volatility."
             )
         visualizations.display_risk_indicators(
             volatility,
@@ -151,7 +151,7 @@ if tickers:
             cvar_95,
             sharpe_ratio
         )
-        st.caption("Volatilidade movel (21 e 63 dias) para acompanhar mudancas de regime.")
+        st.caption("Rolling volatility (21 and 63 days) to monitor regime shifts.")
         col_vol_short, col_vol_long = st.columns(2)
         with col_vol_short:
             visualizations.plot_rolling_volatility(window=21)
@@ -159,21 +159,21 @@ if tickers:
             visualizations.plot_rolling_volatility(window=63)
 
     with tab_corr:
-        st.subheader("Correlacao")
-        with st.expander("Por que importa?", expanded=False):
+        st.subheader("Correlation")
+        with st.expander("Why it matters?", expanded=False):
             st.markdown(
-                "Correlacao mostra a co-movimentacao entre ativos. Combinacoes com baixa correlacao tendem a reduzir o risco total do portfolio."
+                "Correlation shows how assets move together. Low-correlation combinations tend to reduce overall portfolio risk."
             )
         visualizations.plot_correlation_heatmap(correlation)
 
     with tab_port:
-        st.subheader("Analise e Otimizacao de Portfolio")
-        with st.expander("Como interpretar esta secao?", expanded=False):
+        st.subheader("Portfolio Analysis and Optimization")
+        with st.expander("How to interpret this section?", expanded=False):
             st.markdown(
-                "- Os **pesos informados** sao normalizados automaticamente.\n"
-                "- O **resumo da carteira** mostra retorno, risco e Sharpe anuais da alocacao manual.\n"
-                "- Os **portfolios otimizados** usam a fronteira eficiente de Markowitz para maximizar Sharpe ou minimizar risco.\n"
-                "- A **fronteira eficiente** destaca todas as combinacoes otimas para diferentes niveis de retorno."
+                "- The provided **weights** are normalized automatically.\n"
+                "- The **portfolio summary** shows annual return, risk, and Sharpe for the manual allocation.\n"
+                "- The **optimized portfolios** use the Markowitz efficient frontier to maximize Sharpe or minimize risk.\n"
+                "- The **efficient frontier** highlights every optimal combination for different return levels."
             )
         visualizations.display_portfolio_summary(
             weights=pd.Series(weight_vector, index=tickers),
@@ -182,26 +182,26 @@ if tickers:
             sharpe=portfolio_sharpe
         )
 
-        st.write("Portfolios Otimizados")
+        st.write("Optimized Portfolios")
         col_left, col_right = st.columns(2)
         with col_left:
-            st.caption("Maximo Sharpe")
+            st.caption("Maximum Sharpe")
             st.metric("Sharpe", f"{max_sharpe_ratio:.2f}")
-            st.metric("Retorno anual", f"{max_sharpe_return:.2%}")
-            st.metric("Volatilidade anual", f"{max_sharpe_volatility:.2%}")
+            st.metric("Annual return", f"{max_sharpe_return:.2%}")
+            st.metric("Annual volatility", f"{max_sharpe_volatility:.2%}")
             st.dataframe(
-                pd.Series(max_sharpe_weights, index=tickers, name="Peso")
+                pd.Series(max_sharpe_weights, index=tickers, name="Weight")
                 .to_frame()
-                .style.format({"Peso": "{:.2%}"})
+                .style.format({"Weight": "{:.2%}"})
             )
         with col_right:
-            st.caption("Minima Volatilidade")
-            st.metric("Retorno anual", f"{min_vol_return:.2%}")
-            st.metric("Volatilidade anual", f"{min_vol_volatility:.2%}")
+            st.caption("Minimum Volatility")
+            st.metric("Annual return", f"{min_vol_return:.2%}")
+            st.metric("Annual volatility", f"{min_vol_volatility:.2%}")
             st.dataframe(
-                pd.Series(min_vol_weights, index=tickers, name="Peso")
+                pd.Series(min_vol_weights, index=tickers, name="Weight")
                 .to_frame()
-                .style.format({"Peso": "{:.2%}"})
+                .style.format({"Weight": "{:.2%}"})
             )
 
         visualizations.plot_efficient_frontier(
@@ -211,24 +211,24 @@ if tickers:
         )
 
     with tab_plan:
-        st.subheader("Planejamento Financeiro - Monte Carlo")
-        with st.expander("Como usar esta aba?", expanded=False):
+        st.subheader("Financial Planning - Monte Carlo")
+        with st.expander("How to use this tab?", expanded=False):
             st.markdown(
-                "- Informe sua situacao atual (patrimonio, renda, despesas) e metas.\n"
-                "- A simulacao roda multiplos cenarios anuais com base no portfolio selecionado.\n"
-                "- Resultados sao apresentados em valores reais, ajustados pela inflacao informada.\n"
-                "- A probabilidade de sucesso compara o patrimonio projetado com a meta baseada na taxa de retirada."
+                "- Enter your current situation (wealth, income, expenses) and goals.\n"
+                "- The simulation runs multiple annual scenarios based on the selected portfolio.\n"
+                "- Results are presented in real terms, adjusted by the stated inflation.\n"
+                "- The success probability compares projected wealth with the goal implied by the withdrawal rate."
             )
 
         with st.form("financial_planner"):
             col_left, col_right = st.columns(2)
 
             with col_left:
-                current_age = int(st.number_input("Idade atual", min_value=18, max_value=80, value=35, step=1))
+                current_age = int(st.number_input("Current age", min_value=18, max_value=80, value=35, step=1))
                 default_retirement_age = min(max(current_age + 25, current_age + 1), 100)
                 retirement_age = int(
                     st.number_input(
-                        "Idade planejada para aposentadoria",
+                        "Planned retirement age",
                         min_value=current_age + 1,
                         max_value=100,
                         value=default_retirement_age,
@@ -236,11 +236,11 @@ if tickers:
                     )
                 )
                 initial_wealth = float(
-                    st.number_input("Patrimonio atual (R$)", min_value=0.0, value=200000.0, step=10000.0, format="%.2f")
+                    st.number_input("Current wealth (BRL)", min_value=0.0, value=200000.0, step=10000.0, format="%.2f")
                 )
                 desired_income = float(
                     st.number_input(
-                        "Renda anual desejada na aposentadoria (R$)",
+                        "Desired annual retirement income (BRL)",
                         min_value=0.0,
                         value=120000.0,
                         step=5000.0,
@@ -249,7 +249,7 @@ if tickers:
                 )
                 contribution_growth_pct = float(
                     st.number_input(
-                        "Crescimento anual das contribuicoes (%)",
+                        "Annual contribution growth (%)",
                         min_value=0.0,
                         max_value=15.0,
                         value=0.0,
@@ -260,17 +260,17 @@ if tickers:
 
             with col_right:
                 annual_income = float(
-                    st.number_input("Renda anual atual (R$)", min_value=0.0, value=180000.0, step=5000.0, format="%.2f")
+                    st.number_input("Current annual income (BRL)", min_value=0.0, value=180000.0, step=5000.0, format="%.2f")
                 )
                 annual_expenses = float(
-                    st.number_input("Despesas anuais atuais (R$)", min_value=0.0, value=120000.0, step=5000.0, format="%.2f")
+                    st.number_input("Current annual expenses (BRL)", min_value=0.0, value=120000.0, step=5000.0, format="%.2f")
                 )
                 savings_rate_pct = float(
-                    st.slider("Percentual da sobra destinado a poupanca (%)", min_value=0.0, max_value=100.0, value=70.0, step=1.0)
+                    st.slider("Savings rate (%)", min_value=0.0, max_value=100.0, value=70.0, step=1.0)
                 )
                 extra_contribution = float(
                     st.number_input(
-                        "Contribuicao anual adicional (R$)",
+                        "Additional annual contribution (BRL)",
                         min_value=0.0,
                         value=0.0,
                         step=5000.0,
@@ -279,7 +279,7 @@ if tickers:
                 )
                 withdrawal_rate_pct = float(
                     st.number_input(
-                        "Taxa de retirada segura (%)",
+                        "Safe withdrawal rate (%)",
                         min_value=0.5,
                         max_value=10.0,
                         value=4.0,
@@ -289,7 +289,7 @@ if tickers:
                 )
                 inflation_pct = float(
                     st.number_input(
-                        "Inflacao anual esperada (%)",
+                        "Expected annual inflation (%)",
                         min_value=0.0,
                         max_value=15.0,
                         value=3.0,
@@ -298,26 +298,26 @@ if tickers:
                     )
                 )
                 num_simulations = int(
-                    st.number_input("Numero de simulacoes", min_value=1000, max_value=50000, value=10000, step=1000)
+                    st.number_input("Number of simulations", min_value=1000, max_value=50000, value=10000, step=1000)
                 )
                 rng_seed_input = int(
-                    st.number_input("Semente aleatoria (0 para aleatorio)", min_value=0, max_value=999_999, value=0, step=1)
+                    st.number_input("Random seed (0 for random)", min_value=0, max_value=999_999, value=0, step=1)
                 )
 
             savings_capacity = max(annual_income - annual_expenses, 0.0)
             annual_contribution = savings_capacity * (savings_rate_pct / 100.0) + extra_contribution
-            st.caption(f"Aporte anual estimado: {format_currency(annual_contribution)}")
+            st.caption(f"Estimated annual contribution: {format_currency(annual_contribution)}")
 
-            submitted = st.form_submit_button("Rodar simulacao")
+            submitted = st.form_submit_button("Run simulation")
 
         if submitted:
             errors: list[str] = []
             if retirement_age <= current_age:
-                errors.append("A idade de aposentadoria deve ser maior que a idade atual.")
+                errors.append("Retirement age must be greater than current age.")
             if withdrawal_rate_pct <= 0.0:
-                errors.append("A taxa de retirada deve ser positiva.")
+                errors.append("Withdrawal rate must be positive.")
             if num_simulations <= 0:
-                errors.append("Numero de simulacoes deve ser positivo.")
+                errors.append("Number of simulations must be positive.")
 
             if errors:
                 for message in errors:
@@ -349,32 +349,32 @@ if tickers:
                         rng_seed=seed_value,
                     )
                 except ValueError as exc:
-                    st.error(f"Erro na simulacao: {exc}")
+                    st.error(f"Simulation error: {exc}")
                 else:
                     final_values = pd.Series(result.wealth_paths[:, -1], name="Final wealth")
                     mean_final = float(final_values.mean())
 
-                    st.success("Simulacao concluida com sucesso.")
+                    st.success("Simulation completed successfully.")
                     metrics_col1, metrics_col2, metrics_col3 = st.columns(3)
-                    metrics_col1.metric("Probabilidade de atingir a meta", f"{result.probability_success * 100:.1f}%")
-                    metrics_col2.metric("Meta de patrimonio", format_currency(result.target_wealth))
-                    metrics_col3.metric("Patrimonio mediano projetado", format_currency(result.final_distribution["p50"]))
+                    metrics_col1.metric("Probability of meeting the goal", f"{result.probability_success * 100:.1f}%")
+                    metrics_col2.metric("Target wealth", format_currency(result.target_wealth))
+                    metrics_col3.metric("Projected median wealth", format_currency(result.final_distribution["p50"]))
 
-                    st.caption(f"Media do patrimonio final: {format_currency(mean_final)}")
+                    st.caption(f"Average final wealth: {format_currency(mean_final)}")
 
                     visualizations.plot_wealth_fan_chart(
                         result.percentiles,
-                        title="Projecao do patrimonio (percentis)",
-                        yaxis_label="Patrimonio real (R$)"
+                        title="Wealth projection (percentiles)",
+                        yaxis_label="Real wealth (BRL)"
                     )
 
                     visualizations.plot_final_distribution(
                         final_values,
                         target=result.target_wealth,
-                        title="Distribuicao do patrimonio final"
+                        title="Final wealth distribution"
                     )
 
-                    st.write("Percentis do patrimonio final")
-                    st.table(result.final_distribution.apply(format_currency).to_frame(name="Valor"))
+                    st.write("Final wealth percentiles")
+                    st.table(result.final_distribution.apply(format_currency).to_frame(name="Value"))
 else:
-    st.info("Selecione pelo menos um ticker para iniciar a analise.")
+    st.info("Select at least one ticker to begin the analysis.")

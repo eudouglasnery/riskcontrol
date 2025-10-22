@@ -208,7 +208,7 @@ class DataVisualizations:
             x=x_values,
             y=percentiles["p50"],
             line=dict(color='rgba(33, 150, 243, 1.0)', width=2),
-            name='Mediana'
+            name='Median'
         ))
 
         fig.update_layout(
