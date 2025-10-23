@@ -71,7 +71,3 @@
 - `models/visualizations.py`: interactive charts and tables (prices, returns, risk metrics, correlation, frontier, simulations).
 - `models/simulation.py`: Monte Carlo engine for retirement planning scenarios.
 - `tickers_data.csv`: cache file created after the first data pull.
-
-## Suggested Next Steps
-- Add unit tests for the indicator, optimisation, and simulation modules.
-- Schedule a daily job (cron, CI pipeline, or Streamlit Community Cloud) to refresh the cached prices.
