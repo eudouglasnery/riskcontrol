@@ -1,83 +1,77 @@
-# 📊 Market Risk Analysis 
+# Market Risk Dashboard
 
-## 🌟 Project Objective
+## Project Objectives
+- Deliver an interactive market risk dashboard focused on Brazilian equities and REITs.
+- Automate price collection, cleaning, and incremental storage so the app stays fast after the first run.
+- Offer risk analytics, portfolio optimisation, and Monte Carlo retirement planning in a single workflow.
 
-Build a simple market-risk analysis pipeline for Brazilian assets, offering an interactive dashboard that calculates and displays key risk indicators.
+## Tech Stack
+- **Language**: Python 3.12
+- **Core libraries**: Streamlit, Plotly, Pandas, NumPy, SciPy, yfinance, python-dateutil
+- **Tooling**: Git for version control
 
-## 🛠️ Tools Used
-
-* **Python** 3.12
-* **Libraries**
-
-  * [`yfinance`](https://pypi.org/project/yfinance/) – Financial data collection
-  * `pandas`, `numpy`, `scipy`, `python-dateutil` – Data handling and statistics
-  * `plotly`, `streamlit` – Interactive visualization
-* **Other**: Git (version control)
-
-## ▶️ How to Run
-
+## Getting Started
 1. Clone the repository:
-
    ```bash
    git clone https://github.com/your-user/riskcontrol.git
    cd riskcontrol
    ```
-
-2. Install the dependencies:
-
+2. (Optional) Create and activate a virtual environment.
+3. Install dependencies:
    ```bash
    pip install -r requirements.txt
    ```
-
-3. Launch the dashboard:
-
+4. Launch the dashboard:
    ```bash
    streamlit run app.py
    ```
 
-## ⚙️ Key Features
+## Key Features
 
-| Functionality              | Description                                                                                                                                |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Download & cache**       | Daily prices for the last 6 months are pulled via `yfinance` and cached in `tickers_data.csv`. Subsequent runs fetch only missing tickers. |
-| **Manual ticker addition** | A sidebar field lets you add any B3 symbol (e.g., `BBSE3.SA`) on the fly.                                                                  |
-| **Risk indicators**        | • Annualized volatility  • Parametric VaR 95 % **and** 99 %  • Correlation matrix                                                          |
-| **Rolling volatility**     | Charts for 21-day (≈ 1 month) and 63-day (≈ 3 months) windows.                                                                             |
-| **Interactive dashboard**  | All charts and tables are dynamic (Plotly + Streamlit).                                                                                    |
+**Data collection and cache**
+- Downloads the last six months of prices from `yfinance`.
+- Persists prices in `tickers_data.csv`; only missing tickers are fetched in subsequent runs.
+- Ships with a default ticker list and a sidebar input to add any B3 symbol (suffix `.SA`).
 
-## 📈 Calculation Explained
+**Return analytics**
+- Interactive price history and daily return charts.
+- Histogram of returns to assess the normality assumption.
+- Drawdown curve to monitor peak-to-trough losses.
+- Rolling annualised volatility for 21-day and 63-day windows.
 
-### 1. Annualized Volatility
+**Risk indicators**
+- Annualised volatility.
+- Parametric VaR (95% and 99%).
+- Historical VaR and CVaR / Expected Shortfall (95%).
+- Sharpe ratio that honours the user-defined risk-free rate.
+- Correlation heatmap to compare asset co-movements.
 
-Computed from the standard deviation of daily returns, scaled to 252 business days:
+**Portfolio and optimisation**
+- Manual weights with automatic normalisation plus an annual risk-free rate input.
+- Portfolio summary with expected return, volatility, and Sharpe.
+- Markowitz optimisation to maximise Sharpe or minimise volatility.
+- Efficient frontier chart highlighting the optimal and minimum risk portfolios.
 
-```python
-vol = returns.std() * np.sqrt(252)
-```
+**Financial planning (Monte Carlo)**
+- Detailed inputs: current and retirement ages, income, expenses, extra contributions, contribution growth, inflation, withdrawal rate, number of simulations, and RNG seed.
+- Simulates annual real returns with rebalancing and inflows that can grow over time.
+- Fan chart for wealth percentiles (p10, p25, p50, p75, p90) plus the final wealth distribution.
+- Key outputs: probability of reaching the target wealth implied by the withdrawal rate, target level, median projection, and estimated annual contribution.
 
-### 2. Parametric VaR (95 % and 99 %)
+**Interactive interface**
+- Tabs for Return Analysis, Risk, Correlation, Portfolio, and Financial Planning.
+- Contextual guidance through expanders in each section.
+- Plotly visualisations embedded directly in Streamlit.
 
-Assuming normally distributed returns, it estimates the maximum expected loss at the 95 % and 99 % confidence levels:
+## Repository Structure
+- `app.py`: main Streamlit flow that wires together data, indicators, visuals, and simulations.
+- `models/data_extraction.py`: handles downloads, rolling window definition, and cache persistence.
+- `models/indicators.py`: volatility, VaR (parametric and historical), CVaR, Sharpe, and correlation calculations.
+- `models/portfolio.py`: return/volatility helpers, weight normalisation, optimisation, and efficient frontier sampling.
+- `models/visualizations.py`: interactive charts and tables (prices, returns, risk metrics, correlation, frontier, simulations).
+- `models/simulation.py`: Monte Carlo engine for retirement planning scenarios.
+- `tickers_data.csv`: cache file created after the first data pull.
 
-```python
-z_score = norm.ppf(1 - confiance)
-var = returns.mean() + returns.std() * z_score
-```
-
-### 3. Correlation
-
-Calculated via the Pearson correlation matrix of the assets:
-
-```python
-correlation_matrix = returns.corr()
-```
-
-## 📊 Visualizations
-
-The dashboard displays:
-
-* **Historical price series**
-* **Daily returns**
-* **Rolling volatility 21 d & 63 d**
-* **Risk‐indicator table**: Vol, VaR 95 %, VaR 99 %
-* **Correlation matrix**
+## Suggested Next Steps
+- Add unit tests for the indicator, optimisation, and simulation modules.
+- Schedule a daily job (cron, CI pipeline, or Streamlit Community Cloud) to refresh the cached prices.
