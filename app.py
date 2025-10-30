@@ -108,6 +108,15 @@ if tickers:
         points=30
     )
 
+    max_sharpe_point = {
+        "Return": max_sharpe_return,
+        "Volatility": max_sharpe_volatility
+    }
+    min_vol_point = {
+        "Return": min_vol_return,
+        "Volatility": min_vol_volatility
+    }
+
     tab_returns, tab_risk, tab_corr, tab_port, tab_plan = st.tabs([
         "Return Analysis",
         "Individual Risk Analysis",
@@ -206,8 +215,13 @@ if tickers:
 
         visualizations.plot_efficient_frontier(
             efficient_frontier,
-            max_sharpe_point={"Return": max_sharpe_return, "Volatility": max_sharpe_volatility},
-            min_vol_point={"Return": min_vol_return, "Volatility": min_vol_volatility}
+            max_sharpe_point=max_sharpe_point,
+            min_vol_point=min_vol_point
+        )
+        visualizations.plot_efficient_frontier_highlighted(
+            efficient_frontier,
+            max_sharpe_point=max_sharpe_point,
+            min_vol_point=min_vol_point
         )
 
     with tab_plan:

@@ -73,7 +73,7 @@ class PortfolioAnalytics:
         return PortfolioAnalytics.normalize_weights(res.x)
 
     @staticmethod
-    def efficient_frontier(mu: pd.Series, cov: pd.DataFrame, points: int = 30,
+    def efficient_frontier(mu: pd.Series, cov: pd.DataFrame, points: int = 50,
                            bounds: Optional[Tuple[float, float]] = (0.0, 1.0)) -> pd.DataFrame:
         """
         Compute a sampled efficient frontier (no shorting) by sweeping target returns

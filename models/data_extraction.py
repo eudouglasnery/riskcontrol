@@ -8,12 +8,12 @@ from dateutil.relativedelta import relativedelta
 
 class DataExtraction:
     """Manage downloading and caching of ticker price data."""
-    def __init__(self, tickers: list, file_name: str = "tickers_data.csv", months: int = 6):
+    def __init__(self, tickers: list, file_name: str = "tickers_data.csv", months: int | None = None):
         """
         Initialize with:
         - tickers: list of ticker symbols to load
         - file_name: CSV file to cache data
-        - period: lookback window in days for download
+        - months: lookback window expressed in months; use None for full history
         """
         self.tickers_list = tickers
         self.file_name = file_name
@@ -38,7 +38,23 @@ class DataExtraction:
         return df[self.tickers_list]
 
     @staticmethod
-    def read_and_update_csv(tickers_list, start, end, data_path: str):
+    def _download_prices(tickers: list, start, end):
+        """Helper to call yfinance with either explicit dates or the maximum history."""
+        params = {
+            "tickers": tickers,
+            "threads": False,
+            "progress": False,
+            "timeout": 30
+        }
+        if start is not None and end is not None:
+            params.update({"start": start, "end": end})
+        else:
+            params["period"] = "max"
+
+        return yf.download(**params)["Close"]
+
+    @classmethod
+    def read_and_update_csv(cls, tickers_list, start, end, data_path: str):
         """
         Read existing CSV into DataFrame.
         Identify any tickers not yet downloaded.
@@ -47,7 +63,7 @@ class DataExtraction:
         df = pd.read_csv(data_path, index_col=0, parse_dates=True)
         missing = [ticker for ticker in tickers_list if ticker not in df.columns]
         if missing:
-            new = yf.download(missing, start=start, end=end)["Close"]
+            new = cls._download_prices(missing, start, end)
             new.dropna(inplace=True)
             df = df.join(new, how="outer")
             df.to_csv(data_path)
@@ -64,19 +80,23 @@ class DataExtraction:
         return data_path
 
     @staticmethod
-    def define_start_end_date(period: int = 6):
+    def define_start_end_date(period: int | None = None):
         """
-        Given a period in days, return (start, end) datetime pair,
-        where 'end' is today and 'start' is 'period' days before.
+        Given a period in months, return (start, end) datetime pair.
+        When period is None, fall back to requesting the maximum history available.
         """
+        if period is None:
+            return None, None
+
         end = datetime.today()
         start = end - relativedelta(months=period)
         return start, end
 
-    @staticmethod
-    def download_all(tickers_list: list,
-                     start: datetime,
-                     end: datetime,
+    @classmethod
+    def download_all(cls,
+                     tickers_list: list,
+                     start: datetime | None,
+                     end: datetime | None,
                      data_path: str,
                      retries: int = 3,
                      wait: int = 5):
@@ -86,14 +106,7 @@ class DataExtraction:
         """
         for attempt in range(retries):
             try:
-                df = yf.download(
-                    tickers_list,
-                    start=start,
-                    end=end,
-                    threads=False,
-                    progress=False,
-                    timeout=30
-                )["Close"]
+                df = cls._download_prices(tickers_list, start, end)
                 df.dropna(how="all", inplace=True)
                 df.to_csv(data_path)
                 return df
