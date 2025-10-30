@@ -69,8 +69,53 @@ if tickers:
 
     # --- Data load ---
     extraction = DataExtraction(tickers=tickers)
-    price_data = extraction.extract_data()
+    price_data_full = extraction.extract_data()
+    if price_data_full.empty:
+        st.warning("No price data available for the selected tickers.")
+        st.stop()
+
+    min_available_date = price_data_full.index.min().date()
+    max_available_date = price_data_full.index.max().date()
+
+    default_start = st.session_state.get("analysis_start_date", min_available_date)
+    default_end = st.session_state.get("analysis_end_date", max_available_date)
+    default_start = max(default_start, min_available_date)
+    default_end = min(default_end, max_available_date)
+    if default_start > default_end:
+        default_start, default_end = min_available_date, max_available_date
+
+    st.sidebar.header("Data Range")
+    selected_range = st.sidebar.date_input(
+        "Analysis period",
+        value=(default_start, default_end),
+        min_value=min_available_date,
+        max_value=max_available_date,
+        format="DD/MM/YYYY"
+    )
+
+    if isinstance(selected_range, tuple):
+        start_date, end_date = selected_range
+    else:
+        start_date = end_date = selected_range
+
+    if start_date > end_date:
+        st.sidebar.error("Start date must be on or before end date.")
+        st.stop()
+
+    st.session_state["analysis_start_date"] = start_date
+    st.session_state["analysis_end_date"] = end_date
+
+    start_ts = pd.to_datetime(start_date)
+    end_ts = pd.to_datetime(end_date)
+    price_data = price_data_full.loc[start_ts:end_ts]
+    if price_data.empty:
+        st.warning("No price data available for the selected period.")
+        st.stop()
+
     returns = price_data.pct_change().dropna()
+    if returns.empty:
+        st.warning("Not enough return observations in the selected period.")
+        st.stop()
 
     visualizations = DataVisualizations(price_data, returns)
     risk_indicators = RiskIndicators()
@@ -142,11 +187,8 @@ if tickers:
                 "- **Drawdown** measures declines relative to the most recent peak, useful for assessing prolonged loss risk."
             )
         visualizations.plot_price_series()
-        col_a, col_b = st.columns(2)
-        with col_a:
-            visualizations.plot_daily_returns()
-        with col_b:
-            visualizations.plot_return_distribution()
+        visualizations.plot_daily_returns()
+        visualizations.plot_return_distribution()
         visualizations.plot_drawdown()
 
     with tab_risk:
@@ -168,11 +210,8 @@ if tickers:
             sharpe_ratio
         )
         st.caption("Rolling volatility (21 and 63 days) to monitor regime shifts.")
-        col_vol_short, col_vol_long = st.columns(2)
-        with col_vol_short:
-            visualizations.plot_rolling_volatility(window=21)
-        with col_vol_long:
-            visualizations.plot_rolling_volatility(window=63)
+        visualizations.plot_rolling_volatility(window=21)
+        visualizations.plot_rolling_volatility(window=63)
 
     with tab_corr:
         st.subheader("Correlation")
