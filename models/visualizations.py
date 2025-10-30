@@ -163,6 +163,64 @@ class DataVisualizations:
                 marker=dict(size=10, color='red'),
                 name='Min Vol'
             ))
+        fig.update_yaxes(tickformat=".2%")
+        st.plotly_chart(fig, use_container_width=True)
+
+    @staticmethod
+    def plot_efficient_frontier_highlighted(frontier: pd.DataFrame,
+                                            max_sharpe_point: dict | None = None,
+                                            min_vol_point: dict | None = None):
+        """
+        Plot the efficient frontier highlighting efficient vs. inefficient segments.
+        """
+        if min_vol_point is None or 'Return' not in min_vol_point:
+            raise ValueError("min_vol_point with a 'Return' key is required to highlight the efficient frontier.")
+
+        threshold_return = min_vol_point['Return']
+        efficient_part = frontier[frontier['Return'] >= threshold_return]
+        inefficient_part = frontier[frontier['Return'] < threshold_return]
+
+        fig = go.Figure()
+        if not inefficient_part.empty:
+            fig.add_trace(go.Scatter(
+                x=inefficient_part['Volatility'],
+                y=inefficient_part['Return'],
+                mode='lines',
+                line=dict(color='gray', dash='dash'),
+                name='Inefficient Frontier'
+            ))
+        if not efficient_part.empty:
+            fig.add_trace(go.Scatter(
+                x=efficient_part['Volatility'],
+                y=efficient_part['Return'],
+                mode='lines',
+                line=dict(color='blue', dash='solid'),
+                name='Efficient Frontier'
+            ))
+
+        if max_sharpe_point is not None:
+            fig.add_trace(go.Scatter(
+                x=[max_sharpe_point['Volatility']],
+                y=[max_sharpe_point['Return']],
+                mode='markers',
+                marker=dict(size=10, color='green'),
+                name='Max Sharpe'
+            ))
+        fig.add_trace(go.Scatter(
+            x=[min_vol_point['Volatility']],
+            y=[min_vol_point['Return']],
+            mode='markers',
+            marker=dict(size=10, color='red'),
+                name='Min Vol'
+            ))
+
+        fig.update_layout(
+            title='Efficient vs. Inefficient Frontier',
+            template='plotly_white',
+            xaxis_title='Volatility',
+            yaxis_title='Return'
+        )
+        fig.update_yaxes(tickformat=".2%")
         st.plotly_chart(fig, use_container_width=True)
 
     @staticmethod

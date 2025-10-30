@@ -27,8 +27,15 @@ if 'tickers' not in st.session_state:
 new_ticker = st.sidebar.text_input("Add new ticker (e.g., BBSE3.SA)")
 if st.sidebar.button("Add"):
     symbol = new_ticker.strip().upper()
-    if symbol and symbol not in st.session_state['tickers']:
+    if not symbol:
+        st.sidebar.warning("Provide a ticker symbol before adding.")
+    elif symbol in st.session_state['tickers']:
+        st.sidebar.info(f"{symbol} is already in the list.")
+    elif DataExtraction.ticker_exists(symbol):
         st.session_state['tickers'].append(symbol)
+        st.sidebar.success(f"{symbol} added successfully.")
+    else:
+        st.sidebar.error(f"Ticker {symbol} not found. Please check the symbol and try again.")
 
 st.sidebar.header("Asset Selection")
 tickers = st.sidebar.multiselect(
@@ -105,8 +112,17 @@ if tickers:
     efficient_frontier = PortfolioAnalytics.efficient_frontier(
         mu.loc[tickers],
         cov.loc[tickers, tickers],
-        points=30
+        points=50
     )
+
+    max_sharpe_point = {
+        "Return": max_sharpe_return,
+        "Volatility": max_sharpe_volatility
+    }
+    min_vol_point = {
+        "Return": min_vol_return,
+        "Volatility": min_vol_volatility
+    }
 
     tab_returns, tab_risk, tab_corr, tab_port, tab_plan = st.tabs([
         "Return Analysis",
@@ -206,9 +222,23 @@ if tickers:
 
         visualizations.plot_efficient_frontier(
             efficient_frontier,
-            max_sharpe_point={"Return": max_sharpe_return, "Volatility": max_sharpe_volatility},
-            min_vol_point={"Return": min_vol_return, "Volatility": min_vol_volatility}
+            max_sharpe_point=max_sharpe_point,
+            min_vol_point=min_vol_point
         )
+        visualizations.plot_efficient_frontier_highlighted(
+            efficient_frontier,
+            max_sharpe_point=max_sharpe_point,
+            min_vol_point=min_vol_point
+        )
+        efficient_frontier_only = efficient_frontier[efficient_frontier['Return'] >= min_vol_point['Return']].copy()
+        if not efficient_frontier_only.empty:
+            efficient_frontier_only = efficient_frontier_only.sort_values('Return', ascending=False).reset_index(drop=True)
+            st.subheader("Efficient Frontier Portfolios")
+            st.caption("Ordered from highest to lowest expected return.")
+            weight_columns = [col for col in efficient_frontier_only.columns if col not in {'Return', 'Volatility'}]
+            display_df = efficient_frontier_only[['Return', 'Volatility'] + weight_columns]
+            formatters = {column: "{:.2%}" for column in ['Return', 'Volatility'] + weight_columns}
+            st.dataframe(display_df.style.format(formatters))
 
     with tab_plan:
         st.subheader("Financial Planning - Monte Carlo")
