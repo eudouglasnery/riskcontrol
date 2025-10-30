@@ -53,6 +53,20 @@ class DataExtraction:
 
         return yf.download(**params)["Close"]
 
+    @staticmethod
+    def ticker_exists(ticker: str, lookback: str = "1mo") -> bool:
+        """
+        Check whether a ticker yields price data over a short lookback window.
+        Returns True when at least one close price is available, False otherwise.
+        """
+        try:
+            history = yf.Ticker(ticker).history(period=lookback, auto_adjust=False)
+        except Exception:
+            return False
+        if history.empty or "Close" not in history.columns:
+            return False
+        return not history["Close"].dropna().empty
+
     @classmethod
     def read_and_update_csv(cls, tickers_list, start, end, data_path: str):
         """
