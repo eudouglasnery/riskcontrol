@@ -153,6 +153,7 @@ if tickers:
 
     min_vol_return = PortfolioAnalytics.portfolio_return(min_vol_weights, mu.loc[tickers])
     min_vol_volatility = PortfolioAnalytics.portfolio_volatility(min_vol_weights, cov.loc[tickers, tickers])
+    min_vol_sharpe = 0.0 if min_vol_volatility == 0 else (min_vol_return - risk_free_rate) / min_vol_volatility
 
     efficient_frontier = PortfolioAnalytics.efficient_frontier(
         mu.loc[tickers],
@@ -162,11 +163,13 @@ if tickers:
 
     max_sharpe_point = {
         "Return": max_sharpe_return,
-        "Volatility": max_sharpe_volatility
+        "Volatility": max_sharpe_volatility,
+        "Sharpe": max_sharpe_ratio
     }
     min_vol_point = {
         "Return": min_vol_return,
-        "Volatility": min_vol_volatility
+        "Volatility": min_vol_volatility,
+        "Sharpe": min_vol_sharpe
     }
 
     tab_returns, tab_risk, tab_corr, tab_port, tab_plan = st.tabs([
@@ -251,6 +254,7 @@ if tickers:
             )
         with col_right:
             st.caption("Minimum Volatility")
+            st.metric("Sharpe", f"{min_vol_sharpe:.2f}")
             st.metric("Annual return", f"{min_vol_return:.2%}")
             st.metric("Annual volatility", f"{min_vol_volatility:.2%}")
             st.dataframe(
