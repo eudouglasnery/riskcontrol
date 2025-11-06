@@ -63,6 +63,21 @@
 - Contextual guidance through expanders in each section.
 - Plotly visualisations embedded directly in Streamlit.
 
+## Dashboard Previews
+- **Portfolio tab overview** - Efficient frontier table, optimisation highlights, and sidebar controls.
+  ![Portfolio tab overview](images/portfolio-tab-overview.png)
+- **Optimised portfolios** - Side-by-side comparison of maximum Sharpe and minimum volatility allocations.
+  ![Optimised portfolios](images/optimized-portfolios-breakdown.png)
+- **Efficient frontier visualisations** - Scatter and segmented frontier views with highlighted max Sharpe and min vol portfolios.
+  ![Efficient frontier charts](images/efficient-frontier-visualizations.png)
+- **Risk indicators dashboard** - Consolidated volatility, VaR, CVaR, and Sharpe metrics overlaid with rolling volatility.
+  ![Risk indicators dashboard](images/risk-indicators-dashboard.png)
+- **Historical drawdown** - Peak-to-trough history for the selected assets.
+  ![Historical drawdown](images/historical-drawdown-trends.png)
+- **Monte Carlo planning** - Probability of achieving goals and wealth distribution outcomes.
+  ![Monte Carlo wealth projection](images/monte-carlo-wealth-projection.png)
+  ![Monte Carlo wealth distribution](images/monte-carlo-wealth-distribution.png)
+
 ## Repository Structure
 - `app.py`: main Streamlit flow that wires together data, indicators, visuals, and simulations.
 - `models/data_extraction.py`: handles downloads, rolling window definition, and cache persistence.
