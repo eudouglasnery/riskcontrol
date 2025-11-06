@@ -29,8 +29,8 @@
 ## Key Features
 
 **Data collection and cache**
-- Downloads the last six months of prices from `yfinance`.
-- Persists prices in `tickers_data.csv`; only missing tickers are fetched in subsequent runs.
+- Downloads price history from `yfinance` with an optional rolling-window filter.
+- Caches each ticker independently via `st.cache_data`, so previously downloaded assets are re-used instantly even when the watchlist changes.
 - Ships with a default ticker list and a sidebar input to add any B3 symbol (suffix `.SA`).
 
 **Return analytics**
@@ -85,4 +85,3 @@
 - `models/portfolio.py`: return/volatility helpers, weight normalisation, optimisation, and efficient frontier sampling.
 - `models/visualizations.py`: interactive charts and tables (prices, returns, risk metrics, correlation, frontier, simulations).
 - `models/simulation.py`: Monte Carlo engine for retirement planning scenarios.
-- `tickers_data.csv`: cache file created after the first data pull.

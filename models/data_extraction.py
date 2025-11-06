@@ -1,57 +1,45 @@
 import yfinance as yf
-import os
-import time
 import pandas as pd
+import streamlit as st
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
 
 class DataExtraction:
     """Manage downloading and caching of ticker price data."""
-    def __init__(self, tickers: list, file_name: str = "tickers_data.csv", months: int | None = None):
+
+    def __init__(self, tickers: list, months: int | None = None):
         """
         Initialize with:
         - tickers: list of ticker symbols to load
-        - file_name: CSV file to cache data
         - months: lookback window expressed in months; use None for full history
         """
         self.tickers_list = tickers
-        self.file_name = file_name
         self.period = months
 
     def extract_data(self):
         """
         Return DataFrame for requested tickers.
-        If cache CSV exists, update it with any missing tickers.
-        Otherwise, download all data and save to CSV.
+        Each ticker is cached individually via Streamlit to avoid redundant downloads.
         """
-        data_path = self.go_to_project_path(self.file_name)
         start, end = self.define_start_end_date(self.period)
 
-        if os.path.exists(data_path):
-            # CSV file exists: read it and download only missing tickers
-            df = self.read_and_update_csv(self.tickers_list, start, end, data_path)
-        else:
-            # CSV file missing: download all tickers at once
-            df = self.download_all(self.tickers_list, start, end, data_path)
+        frames = []
+        for ticker in self.tickers_list:
+            ticker_df = _cached_ticker_close_prices(ticker, start, end)
+            if ticker_df.empty:
+                continue
+            frames.append(ticker_df)
 
-        return df[self.tickers_list]
+        if not frames:
+            return pd.DataFrame(columns=self.tickers_list)
 
-    @staticmethod
-    def _download_prices(tickers: list, start, end):
-        """Helper to call yfinance with either explicit dates or the maximum history."""
-        params = {
-            "tickers": tickers,
-            "threads": False,
-            "progress": False,
-            "timeout": 30
-        }
-        if start is not None and end is not None:
-            params.update({"start": start, "end": end})
-        else:
-            params["period"] = "max"
+        data = pd.concat(frames, axis=1).sort_index()
+        missing = [ticker for ticker in self.tickers_list if ticker not in data.columns]
+        for ticker in missing:
+            data[ticker] = pd.Series(dtype=float)
 
-        return yf.download(**params)["Close"]
+        return data[self.tickers_list]
 
     @staticmethod
     def ticker_exists(ticker: str, lookback: str = "1mo") -> bool:
@@ -67,32 +55,6 @@ class DataExtraction:
             return False
         return not history["Close"].dropna().empty
 
-    @classmethod
-    def read_and_update_csv(cls, tickers_list, start, end, data_path: str):
-        """
-        Read existing CSV into DataFrame.
-        Identify any tickers not yet downloaded.
-        Download missing tickers, merge into DataFrame, and overwrite CSV.
-        """
-        df = pd.read_csv(data_path, index_col=0, parse_dates=True)
-        missing = [ticker for ticker in tickers_list if ticker not in df.columns]
-        if missing:
-            new = cls._download_prices(missing, start, end)
-            new.dropna(inplace=True)
-            df = df.join(new, how="outer")
-            df.to_csv(data_path)
-        return df
-
-    @staticmethod
-    def go_to_project_path(file_name: str):
-        """
-        Compute the full path to the given file
-        located in the project root directory.
-        """
-        project_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        data_path = os.path.join(project_path, "", file_name)
-        return data_path
-
     @staticmethod
     def define_start_end_date(period: int | None = None):
         """
@@ -106,25 +68,41 @@ class DataExtraction:
         start = end - relativedelta(months=period)
         return start, end
 
-    @classmethod
-    def download_all(cls,
-                     tickers_list: list,
-                     start: datetime | None,
-                     end: datetime | None,
-                     data_path: str,
-                     retries: int = 3,
-                     wait: int = 5):
-        """
-        Download price data for all requested tickers.
-        Save results to CSV and return the DataFrame.
-        """
-        for attempt in range(retries):
-            try:
-                df = cls._download_prices(tickers_list, start, end)
-                df.dropna(how="all", inplace=True)
-                df.to_csv(data_path)
-                return df
-            except Exception as e:
-                if attempt == retries - 1:
-                    raise RuntimeError(f"Failed to download data after {retries} attempts: {e}") from e
-                time.sleep(wait)
+
+@st.cache_data(show_spinner=False)
+def _cached_ticker_close_prices(ticker: str, start: datetime | None, end: datetime | None) -> pd.DataFrame:
+    """
+    Download (and cache) close prices for a single ticker.
+    Streamlit caches the result per (ticker, start, end) combination so the
+    application avoids repeated downloads for the same asset.
+    """
+    params = {
+        "tickers": [ticker],
+        "threads": False,
+        "progress": False,
+        "timeout": 30,
+        "auto_adjust": False,
+    }
+    if start is not None and end is not None:
+        params.update({"start": start, "end": end})
+    else:
+        params["period"] = "max"
+
+    try:
+        closes = yf.download(**params)["Close"]
+    except KeyError:
+        return pd.DataFrame(columns=[ticker])
+
+    if closes.empty:
+        return pd.DataFrame(columns=[ticker])
+
+    if ticker in closes.columns:
+        data = closes[[ticker]]
+    else:
+        # When only one ticker is requested, ensure the column name is consistent
+        data = closes.rename(columns={col: ticker for col in closes.columns})
+        data = data[[ticker]]
+
+    data.dropna(how="all", inplace=True)
+    data.index = pd.to_datetime(data.index)
+    return data
