@@ -271,12 +271,25 @@ if tickers:
         )
         efficient_frontier_only = efficient_frontier[efficient_frontier['Return'] >= min_vol_point['Return']].copy()
         if not efficient_frontier_only.empty:
-            efficient_frontier_only = efficient_frontier_only.sort_values('Return', ascending=False).reset_index(drop=True)
+            # Sort portfolios by Sharpe ratio (higher is better).
+            sharpe_values = (
+                (efficient_frontier_only['Return'] - risk_free_rate)
+                / efficient_frontier_only['Volatility'].replace(0, pd.NA)
+            ).fillna(0.0)
+            efficient_frontier_only = (
+                efficient_frontier_only.assign(Sharpe=sharpe_values)
+                .sort_values('Sharpe', ascending=False)
+                .reset_index(drop=True)
+            )
             st.subheader("Efficient Frontier Portfolios")
-            st.caption("Ordered from highest to lowest expected return.")
-            weight_columns = [col for col in efficient_frontier_only.columns if col not in {'Return', 'Volatility'}]
-            display_df = efficient_frontier_only[['Return', 'Volatility'] + weight_columns]
+            st.caption("Ordered from highest to lowest Sharpe ratio.")
+            weight_columns = [
+                col for col in efficient_frontier_only.columns
+                if col not in {'Return', 'Volatility', 'Sharpe'}
+            ]
+            display_df = efficient_frontier_only[['Return', 'Volatility', 'Sharpe'] + weight_columns]
             formatters = {column: "{:.2%}" for column in ['Return', 'Volatility'] + weight_columns}
+            formatters['Sharpe'] = "{:.3f}"
             st.dataframe(display_df.style.format(formatters))
 
     with tab_plan:
