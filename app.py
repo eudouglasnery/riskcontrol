@@ -343,17 +343,21 @@ if tickers:
                         format="%.2f"
                     )
                 )
+                st.caption("Annual growth applied to contributions (e.g., 2% to mirror future salary increases).")
 
             with col_right:
                 annual_income = float(
                     st.number_input("Current annual income (BRL)", min_value=0.0, value=180000.0, step=5000.0, format="%.2f")
                 )
+                st.caption("Gross yearly income; paired with expenses it determines how much surplus can be invested.")
                 annual_expenses = float(
                     st.number_input("Current annual expenses (BRL)", min_value=0.0, value=120000.0, step=5000.0, format="%.2f")
                 )
+                st.caption("Recurring yearly expenses; if they exceed income the automatic savings are set to zero.")
                 savings_rate_pct = float(
                     st.slider("Savings rate (%)", min_value=0.0, max_value=100.0, value=70.0, step=1.0)
                 )
+                st.caption("Share of the surplus (income minus expenses) that flows into the portfolio every year.")
                 extra_contribution = float(
                     st.number_input(
                         "Additional annual contribution (BRL)",
@@ -363,6 +367,7 @@ if tickers:
                         format="%.2f"
                     )
                 )
+                st.caption("Fixed extra deposit added on top of the automatic savings (e.g., bonuses or third-party contributions).")
                 withdrawal_rate_pct = float(
                     st.number_input(
                         "Safe withdrawal rate (%)",
@@ -373,6 +378,7 @@ if tickers:
                         format="%.2f"
                     )
                 )
+                st.caption("Rate used to convert the desired retirement income into a wealth target (target = income / rate).")
                 inflation_pct = float(
                     st.number_input(
                         "Expected annual inflation (%)",
@@ -383,6 +389,7 @@ if tickers:
                         format="%.2f"
                     )
                 )
+                st.caption("Expected inflation used to translate portfolio returns into real purchasing power.")
                 num_simulations = int(
                     st.number_input("Number of simulations", min_value=1000, max_value=50000, value=10000, step=1000)
                 )
@@ -392,7 +399,7 @@ if tickers:
 
             savings_capacity = max(annual_income - annual_expenses, 0.0)
             annual_contribution = savings_capacity * (savings_rate_pct / 100.0) + extra_contribution
-            st.caption(f"Estimated annual contribution: {format_currency(annual_contribution)}")
+            st.caption(f"Estimated annual contribution (surplus × savings rate + extra deposits): {format_currency(annual_contribution)}")
 
             submitted = st.form_submit_button("Run simulation")
 
